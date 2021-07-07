@@ -1,131 +1,36 @@
 /* eslint-disable no-plusplus, no-continue */
-const foregroundColors = {
-  '30': 'black',
-  '31': 'red',
-  '32': 'green',
-  '33': 'yellow',
-  '34': 'blue',
-  '35': 'magenta',
-  '36': 'cyan',
-  '37': 'white',
-  '90': 'grey',
-};
-const backgroundColors = {
-  '40': 'black',
-  '41': 'red',
-  '42': 'green',
-  '43': 'yellow',
-  '44': 'blue',
-  '45': 'magenta',
-  '46': 'cyan',
-  '47': 'white',
-};
-const styles = {
-  '1': 'bold',
-  '3': 'italic',
-  '4': 'underline',
-};
-const eraseChar = (matchingText, result) => {
-  if (matchingText.length) {
-    return [matchingText.substr(0, matchingText.length - 1), result];
-  } else if (result.length) {
-    const index = result.length - 1;
-    const { text } = result[index];
-    const newResult =
-      text.length === 1
-        ? result.slice(0, result.length - 1)
-        : result.map((item, i) =>
-            index === i
-              ? { ...item, text: text.substr(0, text.length - 1) }
-              : item
-          );
+import Anser from 'anser';
+import { escapeCarriageReturn } from 'escape-carriage';
 
-    return [matchingText, newResult];
-  }
+// This is copied from the Jupyter Classic source code
+// notebook/static/base/js/utils.js to handle \b in a way
+// that is **compatible with Jupyter classic**.   One can
+// argue that this behavior is questionable:
+//   https://stackoverflow.com/questions/55440152/multiple-b-doesnt-work-as-expected-in-jupyter#
+function fixBackspace(txt) {
+  let txt0 = txt;
+  let tmp = txt0;
 
-  return [matchingText, result];
-};
+  do {
+    txt0 = tmp;
+    // Cancel out anything-but-newline followed by backspace
+    // eslint-disable-next-line no-control-regex
+    tmp = txt0.replace(/[^\n]\x08/gm, '');
+  } while (tmp.length < txt0.length);
 
-const ansiparse = str => {
-  let matchingControl = null;
-  let matchingData = null;
-  let matchingText = '';
-  let ansiState = [];
-  let result = [];
-  let state = {};
+  return txt0;
+}
 
-  for (let i = 0; i < str.length; i++) {
-    if (matchingControl !== null) {
-      if (matchingControl === '\x1b' && str[i] === '[') {
-        if (matchingText) {
-          state.text = matchingText;
-          result.push(state);
-          state = {};
-          matchingText = '';
-        }
+function ansiToJSON(input, useClasses) {
+  const input0 = escapeCarriageReturn(fixBackspace(input));
 
-        matchingControl = null;
-        matchingData = '';
-      } else {
-        matchingText += matchingControl + str[i];
-        matchingControl = null;
-      }
+  return Anser.ansiToJson(input0, {
+    json: true,
+    remove_empty: true,
+    use_classes: useClasses,
+  });
+}
 
-      continue;
-    } else if (matchingData !== null) {
-      if (str[i] === ';') {
-        ansiState.push(matchingData);
-        matchingData = '';
-      } else if (str[i] === 'm') {
-        ansiState.push(matchingData);
-        matchingData = null;
-        matchingText = '';
-
-        for (let a = 0; a < ansiState.length; a++) {
-          const ansiCode = ansiState[a];
-
-          if (foregroundColors[ansiCode]) {
-            state.foreground = foregroundColors[ansiCode];
-          } else if (backgroundColors[ansiCode]) {
-            state.background = backgroundColors[ansiCode];
-          } else if (ansiCode === 39) {
-            delete state.foreground;
-          } else if (ansiCode === 49) {
-            delete state.background;
-          } else if (styles[ansiCode]) {
-            state[styles[ansiCode]] = true;
-          } else if (ansiCode === 22) {
-            state.bold = false;
-          } else if (ansiCode === 23) {
-            state.italic = false;
-          } else if (ansiCode === 24) {
-            state.underline = false;
-          }
-        }
-
-        ansiState = [];
-      } else {
-        matchingData += str[i];
-      }
-
-      continue;
-    }
-
-    if (str[i] === '\x1b') {
-      matchingControl = str[i];
-    } else if (str[i] === '\u0008') {
-      [matchingText, result] = eraseChar(matchingText, result);
-    } else {
-      matchingText += str[i];
-    }
-  }
-
-  if (matchingText) {
-    state.text = matchingText + (matchingControl || '');
-    result.push(state);
-  }
-
-  return result;
-};
+const ansiparse = str => ansiToJSON(str);
 
 export default ansiparse;
