@@ -37,8 +37,8 @@ export default class LinePart extends Component {
       <span
         style={{
           ...style,
-          backgroundColor: part.bg ? part.bg : undefined,
-          color: part.fg ? part.fg : undefined,
+          backgroundColor: part.bg ? `rgb(${part.bg})` : undefined,
+          color: part.fg ? `rgb(${part.fg})` : undefined,
           ...(part.decorations || []).reduce((p, c) => {
             const pieces = c.split(':');
 
