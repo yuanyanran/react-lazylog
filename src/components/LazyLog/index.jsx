@@ -182,6 +182,7 @@ export default class LazyLog extends Component {
      * Flag to enable/disable case insensitive search
      */
     caseInsensitive: bool,
+    loading: bool,
   };
 
   static defaultProps = {
@@ -700,7 +701,7 @@ export default class LazyLog extends Component {
   };
 
   render() {
-    const { enableSearch } = this.props;
+    const { enableSearch, loading } = this.props;
     const {
       resultLines,
       isFilteringLinesWithMatches,
@@ -739,6 +740,7 @@ export default class LazyLog extends Component {
             />
           )}
         </AutoSizer>
+        {loading && <Loading />}
       </Fragment>
     );
   }

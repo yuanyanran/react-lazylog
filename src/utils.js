@@ -6,7 +6,8 @@ export const ENCODED_CARRIAGE_RETURN = 13; // \r
 export const SEARCH_BAR_HEIGHT = 45;
 export const SEARCH_MIN_KEYWORDS = 2;
 
-export const isNewline = current => current === ENCODED_NEWLINE;
+export const isNewline = current =>
+  current === ENCODED_NEWLINE || current === ENCODED_CARRIAGE_RETURN;
 
 export const getScrollIndex = ({
   follow = false,
